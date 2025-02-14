@@ -1,3 +1,30 @@
+# Real-time Chat Application
+
+A real-time chat application built with React and Strapi.
+
+## Setup
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Create .env file:
+```
+REACT_APP_BACKEND_URL=https://chat-app-backend-888w.onrender.com
+```
+
+3. Start the development server:
+```bash
+npm start
+```
+
+## Features
+- User authentication
+- Real-time messaging
+- Message history
+- Responsive design
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
