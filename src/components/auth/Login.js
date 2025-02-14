@@ -12,6 +12,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:1337';
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,15 +23,25 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:1337/api/auth/local', {
+      console.log('Login URL:', `${API_URL}/api/auth/local`);
+      console.log('Login data:', { identifier: email, password });
+      
+      const response = await axios.post(`${API_URL}/api/auth/local`, {
         identifier: email,
         password,
       });
+
+      console.log('Login successful:', response.data);
+
+      if (!response.data.jwt || !response.data.user) {
+        throw new Error('Invalid response from server');
+      }
       
       localStorage.setItem('token', response.data.jwt);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/chat');
     } catch (error) {
+      console.error('Login failed:', error.response?.data || error);
       toast({
         title: 'Error',
         description: error.response?.data?.error?.message || 'Login failed',

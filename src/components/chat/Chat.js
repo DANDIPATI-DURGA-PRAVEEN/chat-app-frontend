@@ -31,11 +31,15 @@ function Chat() {
     }
     setUser(userData);
 
-    const newSocket = io('http://localhost:1337', {
+    // Connect to WebSocket with token
+    const newSocket = io(process.env.REACT_APP_BACKEND_URL, {
       auth: { token },
+      transports: ['websocket'],
+      withCredentials: true
     });
 
     newSocket.on('connect', () => {
+      console.log('Connected to WebSocket');
       toast({
         title: 'Connected',
         description: 'Welcome to the chat!',
@@ -44,7 +48,18 @@ function Chat() {
       });
     });
 
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      toast({
+        title: 'Connection Error',
+        description: 'Failed to connect to chat server',
+        status: 'error',
+        duration: 3000,
+      });
+    });
+
     newSocket.on('message', (message) => {
+      console.log('Received message:', message);
       setMessages((prevMessages) => [...prevMessages, message]);
     });
 
@@ -57,15 +72,25 @@ function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Load message history
   useEffect(() => {
     const loadMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:1337/api/messages?populate=sender', {
+        console.log('Loading messages with token:', token);
+        
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/messages?populate=sender`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
+
+        console.log('API Response:', response.data);
+
+        if (!response.data || !response.data.data) {
+          console.error('Invalid response format:', response.data);
+          throw new Error('Invalid response format');
+        }
 
         const formattedMessages = response.data.data.map(msg => ({
           id: msg.id,
@@ -77,9 +102,10 @@ function Chat() {
 
         setMessages(formattedMessages);
       } catch (error) {
+        console.error('Load messages error:', error.response || error);
         toast({
           title: 'Error',
-          description: 'Failed to load message history',
+          description: error.response?.data?.error?.message || 'Failed to load message history',
           status: 'error',
           duration: 3000,
         });
@@ -91,19 +117,30 @@ function Chat() {
     }
   }, [user, toast]);
 
-  const sendMessage = (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !socket) return;
 
-    const newMessage = {
-      text: message,
-      sender: user.username,
-      userId: user.id,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const newMessage = {
+        text: message,
+        sender: user.username,
+        userId: user.id,
+        timestamp: new Date().toISOString(),
+      };
 
-    socket.emit('message', newMessage);
-    setMessage('');
+      console.log('Sending message:', newMessage);
+      socket.emit('message', newMessage);
+      setMessage('');
+    } catch (error) {
+      console.error('Send message error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send message',
+        status: 'error',
+        duration: 3000,
+      });
+    }
   };
 
   const handleLogout = () => {

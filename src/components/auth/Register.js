@@ -13,6 +13,8 @@ import {
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:1337';
+
 function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -23,11 +25,16 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:1337/api/auth/local/register', {
+      console.log('Registration URL:', `${API_URL}/api/auth/local/register`);
+      console.log('Registration data:', { username, email, password });
+      
+      const response = await axios.post(`${API_URL}/api/auth/local/register`, {
         username,
         email,
         password,
       });
+
+      console.log('Registration successful:', response.data);
       
       toast({
         title: 'Success',
@@ -38,6 +45,7 @@ function Register() {
       });
       navigate('/login');
     } catch (error) {
+      console.error('Registration failed:', error.response?.data || error);
       toast({
         title: 'Error',
         description: error.response?.data?.error?.message || 'Registration failed',
